@@ -1,0 +1,101 @@
+{% extends "core/base.html" %}
+{% block title %}Stop Data Sales - Incognitor{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-white">Stop Companies from Selling Your Data</h1>
+    <p class="text-slate-400 mt-2">
+        Submit formal opt-out requests to data brokers asking them to stop <strong>selling</strong>, <strong>sharing</strong>,
+        and <strong>marketing</strong> your personal information — required by CCPA/CPRA and GDPR.
+    </p>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6">
+    <!-- Submit new stop requests -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <h2 class="font-bold text-white mb-1">Submit New Stop Request</h2>
+        <p class="text-sm text-slate-500 mb-6">Select companies you want to stop using your data.</p>
+
+        {% if form.fields.broker_ids.choices %}
+            <form method="post" class="space-y-5">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Companies</label>
+                    <div class="space-y-2 max-h-64 overflow-y-auto bg-slate-800 border border-slate-700 rounded-lg p-4">
+                        {% for value, label in form.fields.broker_ids.choices %}
+                            <label class="flex items-start gap-3 cursor-pointer group">
+                                <input type="checkbox" name="broker_ids" value="{{ value }}" class="mt-1 w-4 h-4 accent-indigo-500">
+                                <span class="text-sm text-slate-300 group-hover:text-white transition">{{ label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" name="stop_selling" checked class="w-4 h-4 accent-indigo-500">
+                        <span class="text-sm text-slate-300">Stop selling my information</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" name="stop_sharing" checked class="w-4 h-4 accent-indigo-500">
+                        <span class="text-sm text-slate-300">Stop sharing with third parties</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" name="stop_marketing" checked class="w-4 h-4 accent-indigo-500">
+                        <span class="text-sm text-slate-300">Stop marketing communications</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition">
+                    🚫 Submit Stop Requests
+                </button>
+            </form>
+        {% else %}
+            <div class="py-8 text-center">
+                <div class="text-4xl mb-3">✅</div>
+                <p class="text-slate-400">You've already submitted stop requests to all available brokers.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Current stop requests -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <h2 class="font-bold text-white mb-1">Your Stop Requests</h2>
+        <p class="text-sm text-slate-500 mb-6">Track the opt-out requests you've submitted.</p>
+
+        {% if my_stops %}
+            <div class="space-y-3">
+                {% for stop in my_stops %}
+                    <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-medium text-slate-200">{{ stop.broker.name }}</p>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    {% if stop.stop_selling %}Stop selling{% endif %}
+                                    {% if stop.stop_sharing %}{% if stop.stop_selling %} · {% endif %}Stop sharing{% endif %}
+                                    {% if stop.stop_marketing %}{% if stop.stop_selling or stop.stop_sharing %} · {% endif %}Stop marketing{% endif %}
+                                </p>
+                                {% if stop.confirmation_code %}
+                                    <p class="text-xs text-slate-500 mt-1 font-mono">Ref: {{ stop.confirmation_code|truncatechars:60 }}</p>
+                                {% endif %}
+                            </div>
+                            <span class="text-xs px-3 py-1 rounded-full
+                                {% if stop.status == 'confirmed' %}bg-emerald-500/10 text-emerald-300
+                                {% elif stop.status == 'submitted' %}bg-indigo-500/10 text-indigo-300
+                                {% elif stop.status == 'failed' %}bg-red-500/10 text-red-300
+                                {% else %}bg-slate-700 text-slate-300{% endif %}">
+                                {{ stop.get_status_display }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">{{ stop.created_at|date:"M d, Y" }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="py-10 text-center">
+                <div class="text-4xl mb-3">📨</div>
+                <p class="text-slate-400">No stop requests yet. Choose companies from the left to get started.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

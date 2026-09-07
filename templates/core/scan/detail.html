@@ -1,0 +1,167 @@
+{% extends "core/base.html" %}
+{% block title %}Scan Results - Incognitor{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <div class="flex justify-between items-start gap-4 flex-wrap">
+        <div>
+            <h1 class="text-3xl font-bold text-white">Scan Results</h1>
+            <p class="text-slate-400 mt-1">Target: <strong class="text-slate-200">{{ scan.full_name }}</strong> · {{ scan.email }}</p>
+            <p class="text-sm text-slate-500 mt-1">Started {{ scan.created_at|date:"M d, Y H:i" }}</p>
+        </div>
+        <div class="flex gap-3">
+            {% if still_processing %}
+                <button onclick="startScan()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-xl transition" id="start-btn">
+                    ⚡ Start Scan
+                </button>
+            {% endif %}
+            <a href="{% url 'new_scan' %}" class="border border-slate-700 hover:border-slate-600 text-slate-300 font-semibold px-6 py-3 rounded-xl transition">New Scan</a>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Overview -->
+<div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6" id="stats-grid">
+        <div class="text-center">
+            <p class="text-sm text-slate-400">Total Brokers</p>
+            <p class="text-2xl font-extrabold text-white" id="stat-total">{{ scan.total_brokers }}</p>
+        </div>
+        <div class="text-center">
+            <p class="text-sm text-slate-400">Processed</p>
+            <p class="text-2xl font-extrabold text-indigo-400" id="stat-completed">{{ scan.completed_brokers }}</p>
+        </div>
+        <div class="text-center">
+            <p class="text-sm text-slate-400">Found</p>
+            <p class="text-2xl font-extrabold text-amber-400" id="stat-found">{{ scan.found_count }}</p>
+        </div>
+        <div class="text-center">
+            <p class="text-sm text-slate-400">Removed / Requested</p>
+            <p class="text-2xl font-extrabold text-emerald-400" id="stat-removed">{{ scan.removed_count }}</p>
+        </div>
+        <div class="text-center">
+            <p class="text-sm text-slate-400">Failed</p>
+            <p class="text-2xl font-extrabold text-red-400" id="stat-failed">{{ scan.failed_count }}</p>
+        </div>
+    </div>
+    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-500" id="progress-bar" style="width: {{ scan.progress_percent }}%"></div>
+    </div>
+    <p class="text-xs text-slate-500 text-right mt-2">
+        Status: <span id="scan-status" class="font-medium text-indigo-400">{{ scan.get_status_display }}</span>
+        {% if scan.error_message %}<span class="text-red-400 ml-2">{{ scan.error_message }}</span>{% endif %}
+    </p>
+</div>
+
+<!-- Removal Request Details -->
+<div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-800">
+        <h2 class="font-bold text-white">Removal Requests ({{ removal_requests|length }})</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-xs text-slate-500 uppercase border-b border-slate-800">
+                    <th class="px-6 py-3">Broker</th>
+                    <th class="px-6 py-3">Category</th>
+                    <th class="px-6 py-3">Method</th>
+                    <th class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3">Notes</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60">
+                {% for req in removal_requests %}
+                    <tr>
+                        <td class="px-6 py-3">
+                            <p class="font-medium text-slate-200">{{ req.broker.name }}</p>
+                            <a href="{{ req.broker.opt_out_url|default:req.broker.website_url }}" target="_blank" class="text-xs text-slate-500 hover:text-indigo-400">Opt-out page ↗</a>
+                        </td>
+                        <td class="px-6 py-3 text-slate-400">{{ req.broker.get_category_display }}</td>
+                        <td class="px-6 py-3">
+                            <span class="text-xs px-2.5 py-1 rounded-full {% if req.method == 'email' %}bg-blue-500/10 text-blue-300{% elif req.method == 'web_form' %}bg-purple-500/10 text-purple-300{% else %}bg-slate-700 text-slate-300{% endif %}">
+                                {{ req.get_method_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-3">
+                            <span class="text-xs px-2.5 py-1 rounded-full
+                                {% if req.status == 'removed' %}bg-emerald-500/10 text-emerald-300
+                                {% elif req.status == 'sent' %}bg-indigo-500/10 text-indigo-300
+                                {% elif req.status == 'acknowledged' %}bg-sky-500/10 text-sky-300
+                                {% elif req.status == 'failed' %}bg-red-500/10 text-red-300
+                                {% elif req.status == 'needs_manual' %}bg-amber-500/10 text-amber-300
+                                {% else %}bg-slate-700 text-slate-300{% endif %}">
+                                {{ req.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-3 text-xs text-slate-500">
+                            {% if req.error_message %}
+                                <span class="text-red-400">{{ req.error_message|truncatechars:80 }}</span>
+                            {% elif req.confirmation_code %}
+                                {{ req.confirmation_code|truncatechars:80 }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if not removal_requests %}
+        <div class="px-6 py-10 text-center text-slate-400">
+            No removal requests yet. Start the scan to process {{ scan.total_brokers }} brokers.
+        </div>
+    {% endif %}
+</div>
+
+<script>
+let pollTimer = null;
+
+async function startScan() {
+    const btn = document.getElementById('start-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Starting...';
+
+    try {
+        const resp = await fetch("{% url 'start_scan' scan.id %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to start');
+        document.getElementById('scan-status').textContent = 'Running';
+        btn.textContent = '⚡ Running in background';
+        pollTimer = setInterval(pollStatus, 2000);
+    } catch (e) {
+        btn.disabled = false;
+        btn.textContent = '⚡ Retry Start';
+        alert(e.message);
+    }
+}
+
+async function pollStatus() {
+    const resp = await fetch("{% url 'scan_status_api' scan.id %}");
+    const data = await resp.json();
+    document.getElementById('stat-completed').textContent = data.completed_brokers;
+    document.getElementById('stat-found').textContent = data.found_count;
+    document.getElementById('stat-removed').textContent = data.removed_count;
+    document.getElementById('stat-failed').textContent = data.failed_count;
+    document.getElementById('progress-bar').style.width = data.progress_percent + '%';
+    document.getElementById('scan-status').textContent = data.status;
+
+    if (data.status === 'completed' || data.status === 'failed') {
+        clearInterval(pollTimer);
+        location.reload();
+    }
+}
+
+{% if still_processing %}
+    // Auto-poll if scan is already running
+    document.getElementById('start-btn').textContent = '⚡ Resume Scan';
+    {% if scan.status == 'running' %}
+        pollTimer = setInterval(pollStatus, 2000);
+    {% endif %}
+{% endif %}
+</script>
+{% endblock %}

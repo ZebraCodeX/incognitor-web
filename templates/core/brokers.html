@@ -1,0 +1,68 @@
+{% extends "core/base.html" %}
+{% block title %}Broker Directory - Incognitor{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-white">Data Broker Directory</h1>
+    <p class="text-slate-400 mt-2">All websites and services that collect and sell personal data — and how to get removed.</p>
+</div>
+
+<!-- Category filter -->
+<div class="flex flex-wrap gap-2 mb-8">
+    <a href="{% url 'brokers' %}" class="px-4 py-2 rounded-full text-sm font-medium transition {% if not active_category %}bg-indigo-600 text-white{% else %}bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-600{% endif %}">
+        All
+    </a>
+    {% for value, label in categories %}
+        <a href="{% url 'brokers' %}?category={{ value }}" class="px-4 py-2 rounded-full text-sm font-medium transition {% if active_category == value %}bg-indigo-600 text-white{% else %}bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-600{% endif %}">
+            {{ label }}
+        </a>
+    {% endfor %}
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for broker in brokers %}
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col hover:border-slate-700 transition">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold text-white">{{ broker.name }}</h3>
+                <span class="text-xs px-2.5 py-1 rounded-full {% if broker.category == 'data_broker' %}bg-red-500/10 text-red-300{% elif broker.category == 'people_search' %}bg-amber-500/10 text-amber-300{% elif broker.category == 'background_check' %}bg-purple-500/10 text-purple-300{% else %}bg-slate-700 text-slate-300{% endif %}">
+                    {{ broker.get_category_display }}
+                </span>
+            </div>
+            <p class="text-sm text-slate-400 mb-4 flex-grow">{{ broker.description }}</p>
+
+            <div class="space-y-1.5 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Removal method:</span>
+                    <span class="text-slate-300 font-medium">{{ broker.get_removal_method_display }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Est. removal time:</span>
+                    <span class="text-slate-300 font-medium">{{ broker.estimated_days }} days</span>
+                </div>
+                {% if broker.requires_identity %}
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">ID verification:</span>
+                        <span class="text-amber-300 font-medium">Required</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="flex gap-2 mt-5 pt-4 border-t border-slate-800">
+                {% if broker.opt_out_url %}
+                    <a href="{{ broker.opt_out_url }}" target="_blank" class="flex-1 text-center bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg transition text-sm">
+                        Opt-Out Page ↗
+                    </a>
+                {% endif %}
+                {% if broker.opt_out_email %}
+                    <a href="mailto:{{ broker.opt_out_email }}" class="flex-1 text-center bg-indigo-600/80 hover:bg-indigo-500 text-white font-semibold py-2 rounded-lg transition text-sm">
+                        Email Request
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% if not brokers %}
+    <div class="text-center py-16 text-slate-400">No brokers in this category yet.</div>
+{% endif %}
+{% endblock %}

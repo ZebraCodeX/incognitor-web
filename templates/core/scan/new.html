@@ -1,0 +1,74 @@
+{% extends "core/base.html" %}
+{% block title %}New Privacy Scan - Incognitor{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">Start a Privacy Scan</h1>
+        <p class="text-slate-400 mt-2">Tell us what to search for. We'll scan {{ broker_count }} data brokers and services and submit removal requests.</p>
+    </div>
+
+    <form method="post" class="bg-slate-900 border border-slate-800 rounded-2xl p-8 space-y-6">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="bg-red-500/10 border border-red-500/30 text-red-300 p-4 rounded-lg text-sm">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">{{ form.full_name.label }}</label>
+            <input type="text" name="full_name" value="{{ form.full_name.value|default:'' }}" placeholder="John Doe" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+            {% if form.full_name.errors %}<p class="text-red-400 text-xs mt-1">{{ form.full_name.errors.0 }}</p>{% endif %}
+            <p class="text-xs text-slate-500 mt-1">{{ form.full_name.help_text }}</p>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">{{ form.email.label }}</label>
+            <input type="email" name="email" value="{{ form.email.value|default:'' }}" placeholder="john@example.com" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+            {% if form.email.errors %}<p class="text-red-400 text-xs mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+            <p class="text-xs text-slate-500 mt-1">{{ form.email.help_text }}</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">{{ form.phone.label }}</label>
+                <input type="text" name="phone" value="{{ form.phone.value|default:'' }}" placeholder="+1 (555) 123-4567" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                {% if form.phone.errors %}<p class="text-red-400 text-xs mt-1">{{ form.phone.errors.0 }}</p>{% endif %}
+                <p class="text-xs text-slate-500 mt-1">{{ form.phone.help_text }}</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Categories</label>
+                <div class="space-y-1.5 max-h-40 overflow-y-auto bg-slate-800 border border-slate-700 rounded-lg p-3">
+                    {% for value, label in form.fields.categories.choices %}
+                        <label class="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                            <input type="checkbox" name="categories" value="{{ value }}" class="rounded accent-indigo-500">
+                            {{ label }}
+                        </label>
+                    {% endfor %}
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Leave empty to scan all categories</p>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">{{ form.address.label }}</label>
+            <textarea name="address" rows="3" placeholder="123 Main St, City, State 12345" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">{{ form.address.value|default:'' }}</textarea>
+            {% if form.address.errors %}<p class="text-red-400 text-xs mt-1">{{ form.address.errors.0 }}</p>{% endif %}
+            <p class="text-xs text-slate-500 mt-1">{{ form.address.help_text }}</p>
+        </div>
+
+        <label class="flex items-center gap-3 bg-slate-800 border border-slate-700 rounded-xl p-4 cursor-pointer">
+            <input type="checkbox" name="is_recurring" class="w-5 h-5 accent-indigo-500">
+            <div>
+                <span class="font-medium text-slate-200">Enable Recurring Scans</span>
+                <p class="text-xs text-slate-500">Automatically re-scan every 90 days so new listings don't pop back up.</p>
+            </div>
+        </label>
+
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl text-lg transition">
+            🔍 Start Scan
+        </button>
+    </form>
+</div>
+{% endblock %}

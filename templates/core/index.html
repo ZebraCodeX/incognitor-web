@@ -1,0 +1,63 @@
+{% extends "core/base.html" %}
+{% block title %}Incognitor - Delete Your Digital Footprint{% endblock %}
+
+{% block content %}
+<div class="text-center py-16 max-w-3xl mx-auto">
+    <div class="text-5xl mb-6">🛡️</div>
+    <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-6">
+        Delete Your Information<br>
+        <span class="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">From the Entire Internet</span>
+    </h1>
+    <p class="text-lg text-slate-400 mb-10">
+        We scan <strong class="text-slate-200">{{ broker_count }}+ data brokers, people search sites, and background check services</strong>
+        that publish and sell your personal information — then we send removal requests and opt-out instructions on your behalf.
+    </p>
+    <div class="flex justify-center gap-4">
+        {% if user.is_authenticated %}
+            <a href="{% url 'new_scan' %}" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-indigo-900/40">
+                Start a Privacy Scan
+            </a>
+        {% else %}
+            <a href="{% url 'signup' %}" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-indigo-900/40">
+                Get Started Free
+            </a>
+            <a href="{% url 'login' %}" class="border border-slate-700 hover:border-slate-600 text-slate-300 px-8 py-4 rounded-xl font-bold text-lg transition">
+                Login
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 py-12">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <div class="text-3xl mb-4">🔍</div>
+        <h3 class="text-white font-bold text-lg mb-2">Comprehensive Scan</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+            We check people search sites, data brokers, public records, background checks, and marketing lists for your name, email, phone, and address.
+        </p>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <div class="text-3xl mb-4">📨</div>
+        <h3 class="text-white font-bold text-lg mb-2">Automated Removal Requests</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+            We send legally-formatted removal requests via email and automatically fill opt-out web forms on your behalf, citing GDPR / CCPA / CPRA.
+        </p>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <div class="text-3xl mb-4">🚫</div>
+        <h3 class="text-white font-bold text-lg mb-2">Stop Data Selling</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+            Opt out of data brokers selling, sharing, and using your information for marketing. We submit formal 'stop selling my data' requests.
+        </p>
+    </div>
+</div>
+
+<div class="py-12">
+    <h2 class="text-2xl font-bold text-white text-center mb-10">Brokers We Cover</h2>
+    <div class="flex flex-wrap justify-center gap-3">
+        {% for cat_label, cat_value in categories %}
+            <span class="px-4 py-2 bg-slate-900 border border-slate-800 rounded-full text-sm text-slate-300">{{ cat_label }}</span>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
