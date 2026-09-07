@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.git/
+.gitignore
+db.sqlite3
+.env
+staticfiles/
+data/
+tests/
+desktop/
+brokers/
+*.md
+run.sh
