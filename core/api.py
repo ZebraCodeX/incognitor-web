@@ -18,6 +18,7 @@ from .serializers import (
     ActivityLogSerializer,
 )
 from .services.scan_engine import ScanEngine
+from .runner import start_scan_in_thread
 
 
 class AuthViewSet(viewsets.ViewSet):
@@ -92,27 +93,7 @@ class ScanViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         scan = serializer.save(user=self.request.user)
-        # Auto-start the scan in the background
-        try:
-            from .tasks import run_scan as run_scan_task
-            result = run_scan_task.delay(str(scan.id))
-            scan.celery_task_id = result.id
-            scan.save(update_fields=["celery_task_id"])
-        except Exception:
-            import threading
-
-            scan_ref = scan.id
-
-            def _run():
-                try:
-                    ScanEngine(scan_ref).run()
-                except Exception as e:
-                    s = Scan.objects.get(id=scan_ref)
-                    s.status = Scan.Status.FAILED
-                    s.error_message = str(e)
-                    s.save()
-
-            threading.Thread(target=_run, daemon=True).start()
+        start_scan_in_thread(scan)
 
     @action(detail=True, methods=["post"])
     def start(self, request, pk=None):
@@ -121,28 +102,8 @@ class ScanViewSet(viewsets.ModelViewSet):
             return Response(
                 {"error": f"Scan already {scan.status}"}, status=400
             )
-        try:
-            from .tasks import run_scan as run_scan_task
-            result = run_scan_task.delay(str(scan.id))
-            scan.celery_task_id = result.id
-            scan.save(update_fields=["celery_task_id"])
-            return Response({"status": "started", "celery_task_id": result.id})
-        except Exception:
-            import threading
-
-            scan_id = scan.id
-
-            def _run():
-                try:
-                    ScanEngine(scan_id).run()
-                except Exception as e:
-                    s = Scan.objects.get(id=scan_id)
-                    s.status = Scan.Status.FAILED
-                    s.error_message = str(e)
-                    s.save()
-
-            threading.Thread(target=_run, daemon=True).start()
-            return Response({"status": "started", "mode": "thread"})
+        start_scan_in_thread(scan)
+        return Response({"status": "started", "mode": "thread"})
 
     @action(detail=True, methods=["get"])
     def status(self, request, pk=None):

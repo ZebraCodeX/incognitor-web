@@ -1,34 +1,32 @@
 # Incognitor — Fly.io configuration
 #
 # Processes:
-#   web    -> Django via gunicorn (public traffic, TLS is automatic)
-#   worker -> Celery worker (runs the scans)
-#   beat   -> Celery beat (triggers recurring scans daily at 06:00 UTC)
+#   web -> Django via gunicorn (public traffic, TLS automatic; scans + the
+#          recurring-scan scheduler run in-process here)
 #
 # One-time setup (see deploy/fly.md):
 #   fly launch --no-deploy --name <your-app>          # creates the app + this toml
 #   fly volumes create incognitor_data --size 1       # persistent SQLite volume
-#   fly redis create --name incognitor-redis --size 1 # managed Redis
 #   fly secrets set DJANGO_SECRET_KEY=... EMAIL_HOST_USER=... EMAIL_HOST_PASSWORD=...
 #   fly deploy
 
 app = "incognitor"
+primary_region = "lax"
 
-# Release hook: migrate + seed the broker registry before traffic is served.
-release_command = "python manage.py migrate && python manage.py seed_brokers"
-
+# Migrations + broker seeding run in entrypoint.sh before gunicorn starts, on the
+# same machine and volume, so no separate release command is needed.
 [env]
   DEBUG = "false"
+  DJANGO_SETTINGS_MODULE = "incognitor.settings"
   ALLOWED_HOSTS = "localhost,127.0.0.1,.fly.dev"
   CSRF_TRUSTED_ORIGINS = "https://incognitor.fly.dev"
   DB_PATH = "/app/data/db.sqlite3"
   STATIC_ROOT = "/app/staticfiles"
   PLAYWRIGHT_BROWSERS_PATH = "/ms-playwright"
 
-  # Set via `fly secrets set CELERY_BROKER_URL` to your Fly Redis connection string,
-  # e.g. redis://default:<password>@incognitor-redis.internal:6379
-  CELERY_BROKER_URL = ""
-  CELERY_RESULT_BACKEND = ""
+  # Scans run in-process on the web machine (see gunicorn.conf.py), so no
+  # Celery worker, beat process, or Redis broker is required.
+  # CELERY_BROKER_URL = ""
 
 [http_service]
   internal_port = 8080
@@ -36,6 +34,7 @@ release_command = "python manage.py migrate && python manage.py seed_brokers"
   auto_stop_machines = false
   auto_start_machines = true
   min_machines_running = 1
+  processes = ["app"]
 
   [http_service.concurrency]
     type = "connections"
@@ -46,13 +45,9 @@ release_command = "python manage.py migrate && python manage.py seed_brokers"
   source = "incognitor_data"
   destination = "/app/data"
 
-# One shared VM shape; per-process entrypoints. Scale with:
-#   fly scale count web=1 worker=1 beat=1
+[processes]
+  app = "./entrypoint.sh"
+
 [[vm]]
   size = "shared-cpu-1x"
   memory = "512mb"
-
-  [vm.processes]
-    web = "gunicorn incognitor.wsgi:application --config gunicorn.conf.py"
-    worker = "celery -A incognitor worker -l info --concurrency=2"
-    beat = "celery -A incognitor beat -l info"

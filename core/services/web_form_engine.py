@@ -59,7 +59,14 @@ class WebFormEngine:
             raise ValueError(f"Broker {broker.name} form config missing url or steps")
 
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                ],
+            )
             page = await browser.new_page()
 
             result = {"page_title": "", "final_url": "", "evidence": ""}
@@ -71,7 +78,11 @@ class WebFormEngine:
                     value = step.get("value", "")
 
                     if action == "goto":
-                        await page.goto(url, wait_until="networkidle", timeout=30000)
+                        await page.goto(
+                            url,
+                            wait_until="domcontentloaded",
+                            timeout=30000,
+                        )
                         result["final_url"] = page.url
                         result["page_title"] = await page.title()
 
@@ -127,13 +138,22 @@ class WebFormEngine:
             text = text.replace(key, str(val))
         return text
 
-    def submit(self, broker, personal_data):
+    def submit(self, broker, personal_data, timeout=90):
         """Synchronous wrapper for the async form filling."""
+        async def _guarded():
+            return await asyncio.wait_for(
+                self._process(broker, personal_data), timeout=timeout
+            )
+
         try:
-            return asyncio.run(self._process(broker, personal_data))
-        except RuntimeError:
+            return asyncio.run(_guarded())
+        except (asyncio.TimeoutError, RuntimeError):
+            logger.error(f"Web form timed out or loop busy for {broker.name}")
             loop = asyncio.new_event_loop()
             try:
-                return loop.run_until_complete(self._process(broker, personal_data))
+                return loop.run_until_complete(_guarded())
+            except asyncio.TimeoutError:
+                logger.error(f"Web form still timed out for {broker.name}")
+                raise
             finally:
                 loop.close()
