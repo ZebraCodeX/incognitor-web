@@ -1,0 +1,62 @@
+{% extends 'core/console/base_console.html' %}
+{% block console_content %}
+<form method="get" class="mb-4 flex gap-2">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search username or email"
+           class="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-200">
+    <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Search</button>
+</form>
+
+<div class="rounded-xl bg-slate-900/60 border border-slate-800 overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-slate-400 border-b border-slate-800">
+                <th class="px-4 py-3">User</th>
+                <th class="px-4 py-3">Plan</th>
+                <th class="px-4 py-3">Staff</th>
+                <th class="px-4 py-3">Identities</th>
+                <th class="px-4 py-3">Exposures</th>
+                <th class="px-4 py-3">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr class="border-b border-slate-800/60">
+                <td class="px-4 py-3">
+                    <div class="text-slate-100 font-semibold">{{ u.username }}</div>
+                    <div class="text-slate-500 text-xs">{{ u.email }}</div>
+                </td>
+                <td class="px-4 py-3">
+                    <form method="post" action="{% url 'console_user_action' u.id %}" class="flex gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="set_plan">
+                        <select name="plan" class="px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200 text-xs">
+                            {% for value, label in plans %}
+                                <option value="{{ value }}" {% if u.profile.plan == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-xs">Save</button>
+                    </form>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="{% if u.is_staff %}text-emerald-400{% else %}text-slate-500{% endif %}">{{ u.is_staff }}</span>
+                </td>
+                <td class="px-4 py-3 text-slate-300">{{ u.identities.count }}</td>
+                <td class="px-4 py-3 text-slate-300">{{ u.exposures.count }}</td>
+                <td class="px-4 py-3">
+                    <form method="post" action="{% url 'console_user_action' u.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="toggle_staff">
+                        <button class="px-3 py-1 rounded-lg text-xs font-semibold
+                            {% if u.is_staff %}bg-red-500/20 text-red-300 hover:bg-red-500/30{% else %}bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30{% endif %}">
+                            {% if u.is_staff %}Revoke admin{% else %}Grant admin{% endif %}
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No users found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

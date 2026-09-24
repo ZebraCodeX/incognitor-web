@@ -1,6 +1,10 @@
 import asyncio
 import logging
 
+from django.conf import settings
+
+from core.services.ssrf import UnsafeURLError, validate_outbound_url
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,14 +62,19 @@ class WebFormEngine:
         if not url or not steps:
             raise ValueError(f"Broker {broker.name} form config missing url or steps")
 
+        # SSRF guard: never fetch private/link-local/metadata addresses.
+        validate_outbound_url(url)
+
+        # Chromium's sandbox is on by default; only disable it when explicitly
+        # requested for a locked-down container (never on a shared host).
+        launch_args = ["--disable-dev-shm-usage", "--disable-gpu"]
+        if getattr(settings, "PLAYWRIGHT_NO_SANDBOX", False):
+            launch_args.insert(0, "--no-sandbox")
+
         async with async_playwright() as p:
             browser = await p.chromium.launch(
                 headless=True,
-                args=[
-                    "--no-sandbox",
-                    "--disable-dev-shm-usage",
-                    "--disable-gpu",
-                ],
+                args=launch_args,
             )
             page = await browser.new_page()
 
@@ -78,8 +87,13 @@ class WebFormEngine:
                     value = step.get("value", "")
 
                     if action == "goto":
+                        target = value or url
+                        try:
+                            validate_outbound_url(target)
+                        except UnsafeURLError as exc:
+                            raise ValueError(f"blocked navigation: {exc}") from exc
                         await page.goto(
-                            url,
+                            target,
                             wait_until="domcontentloaded",
                             timeout=30000,
                         )

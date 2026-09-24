@@ -1,0 +1,54 @@
+{% extends 'core/console/base_console.html' %}
+{% block console_content %}
+<div class="mb-4">
+    <form method="post" action="{% url 'console_rescore_all' %}">
+        {% csrf_token %}
+        <button class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm">Recompute all compliance scores</button>
+    </form>
+</div>
+<div class="rounded-xl bg-slate-900/60 border border-slate-800 overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-slate-400 border-b border-slate-800">
+                <th class="px-4 py-3">Broker</th>
+                <th class="px-4 py-3">Category</th>
+                <th class="px-4 py-3">Method</th>
+                <th class="px-4 py-3">Active</th>
+                <th class="px-4 py-3">Compliance</th>
+                <th class="px-4 py-3">Removal rate</th>
+                <th class="px-4 py-3">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in brokers %}
+            <tr class="border-b border-slate-800/60">
+                <td class="px-4 py-3 text-slate-200 font-semibold">{{ b.name }}</td>
+                <td class="px-4 py-3 text-slate-400">{{ b.get_category_display }}</td>
+                <td class="px-4 py-3 text-slate-400">{{ b.removal_method }}</td>
+                <td class="px-4 py-3">
+                    <span class="{% if b.is_active %}text-emerald-400{% else %}text-slate-500{% endif %}">{{ b.is_active }}</span>
+                </td>
+                <td class="px-4 py-3 text-slate-200">{{ b.compliance_score|floatformat:1|default:"—" }}</td>
+                <td class="px-4 py-3 text-slate-400">{% if b.removal_rate != None %}{{ b.removal_rate|floatformat:2 }}{% else %}—{% endif %}</td>
+                <td class="px-4 py-3">
+                    <div class="flex gap-2">
+                        <form method="post" action="{% url 'console_broker_action' b.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="toggle_active">
+                            <button class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-xs">Toggle</button>
+                        </form>
+                        <form method="post" action="{% url 'console_broker_action' b.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="rescore">
+                            <button class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-xs">Rescore</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="px-4 py-6 text-center text-slate-500">No brokers.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

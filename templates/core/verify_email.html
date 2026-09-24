@@ -1,0 +1,16 @@
+{% extends 'core/base.html' %}
+{% block title %}Verify Email - Incognitor{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto mt-16 p-8 rounded-2xl bg-slate-900/70 border border-slate-800 text-center">
+    {% if verified %}
+        <div class="text-emerald-400 text-5xl mb-4">✓</div>
+        <h1 class="text-2xl font-bold text-white">Email verified</h1>
+        <p class="text-slate-400 mt-2">Your email address is confirmed.</p>
+        <a href="{% url 'dashboard' %}" class="inline-block mt-6 px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Go to dashboard</a>
+    {% else %}
+        <div class="text-red-400 text-5xl mb-4">!</div>
+        <h1 class="text-2xl font-bold text-white">Verification failed</h1>
+        <p class="text-slate-400 mt-2">{{ error }}</p>
+    {% endif %}
+</div>
+{% endblock %}

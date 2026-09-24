@@ -1,7 +1,9 @@
-from django.test import TestCase, override_settings
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
-from unittest.mock import patch, MagicMock
-from core.models import Broker, Scan, RemovalRequest, UserProfile
+from django.test import TestCase
+
+from core.models import Broker, RemovalRequest, Scan, UserProfile
 from core.services.scan_engine import ScanEngine
 
 

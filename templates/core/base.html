@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -36,9 +37,13 @@
                 <div class="hidden md:flex items-center gap-6 text-sm font-medium">
                     {% if user.is_authenticated %}
                         <a href="{% url 'dashboard' %}" class="text-slate-300 hover:text-white transition">Dashboard</a>
+                        <a href="{% url 'exposures' %}" class="text-slate-300 hover:text-white transition">Exposures</a>
                         <a href="{% url 'new_scan' %}" class="text-slate-300 hover:text-white transition">New Scan</a>
                         <a href="{% url 'data_stops' %}" class="text-slate-300 hover:text-white transition">Stop Data Sales</a>
                         <a href="{% url 'brokers' %}" class="text-slate-300 hover:text-white transition">Brokers</a>
+                        {% if user.is_staff %}
+                        <a href="{% url 'console_overview' %}" class="text-amber-300 hover:text-amber-200 transition font-semibold">Console</a>
+                        {% endif %}
                         <span class="text-slate-500">|</span>
                         <a href="{% url 'profile' %}" class="text-slate-400 hover:text-white transition">{{ user.username }}</a>
                         <a href="{% url 'logout' %}" class="text-red-400 hover:text-red-300 transition">Logout</a>
@@ -73,5 +78,8 @@
             </div>
         </div>
     </footer>
+    {% if user.is_authenticated %}
+    <script src="{% static 'js/incognitor-push.js' %}" defer></script>
+    {% endif %}
 </body>
 </html>

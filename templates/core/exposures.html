@@ -1,0 +1,86 @@
+{% extends 'core/base.html' %}
+{% block title %}Exposure Feed - Incognitor{% endblock %}
+{% block content %}
+<div class="mb-8 flex items-end justify-between">
+    <div>
+        <h1 class="text-3xl font-extrabold text-white">Exposure Feed</h1>
+        <p class="text-slate-400 mt-1">Everything Sentinel has found about you, ranked by severity.</p>
+    </div>
+    <div class="flex flex-col items-end gap-3">
+        <div class="flex gap-3 text-sm">
+            <div class="px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300">
+                {{ counts.critical }} critical
+            </div>
+            <div class="px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">
+                {{ counts.high }} high
+            </div>
+            <div class="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
+                {{ counts.total }} total
+            </div>
+        </div>
+        <button id="enable-push" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold">
+            🔔 Enable browser alerts
+        </button>
+        <span id="push-status" class="text-xs text-slate-500"></span>
+    </div>
+</div>
+<script>
+    (function () {
+        var btn = document.getElementById("enable-push");
+        var status = document.getElementById("push-status");
+        if (!btn) return;
+        btn.addEventListener("click", async function () {
+            if (!window.incognitorEnablePush) {
+                status.textContent = "Push not supported in this browser.";
+                return;
+            }
+            status.textContent = "Requesting permission…";
+            var result = await window.incognitorEnablePush();
+            if (result && result.ok) {
+                status.textContent = "Browser alerts enabled.";
+                btn.disabled = true;
+            } else {
+                status.textContent = "Could not enable alerts (" + ((result && result.reason) || "unknown") + ").";
+            }
+        });
+    })();
+</script>
+
+{% if exposures %}
+<div class="space-y-3">
+    {% for exposure in exposures %}
+    <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col md:flex-row md:items-center gap-4">
+        <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="px-2 py-0.5 rounded text-xs font-semibold
+                    {% if exposure.severity == 'critical' %}bg-red-500/20 text-red-300
+                    {% elif exposure.severity == 'high' %}bg-amber-500/20 text-amber-300
+                    {% elif exposure.severity == 'medium' %}bg-indigo-500/20 text-indigo-300
+                    {% else %}bg-slate-700 text-slate-300{% endif %}">{{ exposure.get_severity_display }}</span>
+                <span class="text-xs text-slate-500">{{ exposure.get_kind_display }}</span>
+                <span class="text-xs text-slate-500">· {{ exposure.status }}</span>
+            </div>
+            <h3 class="text-white font-semibold">{{ exposure.title }}</h3>
+            <p class="text-sm text-slate-400">
+                {{ exposure.source }}{% if exposure.masked_evidence %} · matched {{ exposure.masked_evidence }}{% endif %}
+                · confidence {{ exposure.confidence|floatformat:2 }}
+            </p>
+            {% if exposure.url %}
+                <a href="{{ exposure.url }}" rel="noopener noreferrer nofollow" target="_blank"
+                   class="text-xs text-indigo-400 hover:text-indigo-300 break-all">{{ exposure.url }}</a>
+            {% endif %}
+        </div>
+        <div class="text-xs text-slate-500 md:text-right">
+            <div>First seen {{ exposure.first_seen|date:"Y-m-d" }}</div>
+            <div>Last seen {{ exposure.last_seen|date:"Y-m-d" }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="p-10 rounded-xl bg-slate-900/60 border border-slate-800 text-center">
+    <p class="text-slate-300 font-semibold">No exposures yet.</p>
+    <p class="text-slate-500 mt-1">Run monitoring from the desktop agent to populate your feed.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,9 +1,9 @@
-from django.test import TestCase
-from django.test import Client
-from django.contrib.auth.models import User
 from unittest.mock import patch
+
+from django.contrib.auth.models import User
+from django.test import Client, TestCase
+
 from core.models import Broker, UserProfile
-from core.services.email_engine import EmailDeletionEngine
 
 
 class ApiTests(TestCase):

@@ -1,14 +1,16 @@
-from django.utils import timezone
+import logging
 from datetime import timedelta
+
+from django.utils import timezone
+
 from core.models import (
-    Scan,
-    Broker,
-    RemovalRequest,
-    DataStopRequest,
     ActivityLog,
+    Broker,
+    DataStopRequest,
+    RemovalRequest,
+    Scan,
 )
 from core.services import EmailDeletionEngine, WebFormEngine
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,6 @@ class ScanEngine:
 
     def run(self):
         """Execute the full scan - process each broker through its removal method."""
-        from core.models import BrokerCategory
 
         if self.scan.status in [Scan.Status.RUNNING, Scan.Status.COMPLETED]:
             raise ValueError(f"Scan {self.scan.id} already in state {self.scan.status}")
@@ -41,6 +42,7 @@ class ScanEngine:
         self.scan.save()
 
         ActivityLog.objects.create(
+            user=self.scan.user,
             scan=self.scan,
             action="scan_started",
             details={"total_brokers": self.scan.total_brokers},
@@ -67,6 +69,10 @@ class ScanEngine:
 
         self.scan.status = Scan.Status.COMPLETED
         self.scan.completed_at = timezone.now()
+        # Requests that still need a human (manual-only brokers).
+        self.scan.pending_count = self.scan.requests.filter(
+            status=RemovalRequest.Status.NEEDS_MANUAL
+        ).count()
 
         # Schedule next scan if recurring
         if self.scan.is_recurring:
@@ -77,6 +83,7 @@ class ScanEngine:
         self.scan.save()
 
         ActivityLog.objects.create(
+            user=self.scan.user,
             scan=self.scan,
             action="scan_completed",
             details={
@@ -144,6 +151,7 @@ class ScanEngine:
             self.scan.save()
 
             ActivityLog.objects.create(
+                user=self.scan.user,
                 scan=self.scan,
                 action=f"broker_processed:{broker.slug}",
                 details={"method": broker.removal_method, "status": removal.status},
@@ -159,7 +167,6 @@ class ScanEngine:
     @staticmethod
     def submit_data_stop_request(user, broker, stop_selling=True, stop_sharing=True, stop_marketing=True):
         """Submit a 'stop selling my data' request to a broker."""
-        profile = getattr(user, "profile", None)
         full_name = f"{user.first_name} {user.last_name}".strip()
         email = user.email
 
@@ -185,6 +192,7 @@ class ScanEngine:
         )
 
         ActivityLog.objects.create(
+            user=user,
             action="data_stop_submitted",
             details={"broker": broker.name, "user": user.username},
         )

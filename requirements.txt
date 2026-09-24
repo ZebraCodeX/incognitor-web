@@ -9,3 +9,10 @@ python-dotenv>=1.0
 django-cors-headers>=4.4
 whitenoise>=6.8
 gunicorn>=23.0
+
+# --- Sentinel security / agent additions ---
+argon2-cffi>=23.1          # Argon2id password hashing
+cryptography>=43.0         # Fernet field encryption + blind-index primitives
+requests>=2.32             # outbound HTTP for exposure sources (HIBP, DeHashed, search)
+pyotp>=2.9                 # TOTP multi-factor authentication
+pywebpush>=2.0             # Web Push (VAPID) browser notifications

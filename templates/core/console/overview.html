@@ -1,0 +1,56 @@
+{% extends 'core/console/base_console.html' %}
+{% block console_content %}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800">
+        <div class="text-slate-400 text-xs uppercase tracking-wide">Users</div>
+        <div class="text-3xl font-extrabold text-white">{{ stats.users }}</div>
+        <div class="text-xs text-slate-500">{{ stats.staff }} staff</div>
+    </div>
+    <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800">
+        <div class="text-slate-400 text-xs uppercase tracking-wide">Identities</div>
+        <div class="text-3xl font-extrabold text-white">{{ stats.identities }}</div>
+        <div class="text-xs text-slate-500">{{ stats.households }} households</div>
+    </div>
+    <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800">
+        <div class="text-slate-400 text-xs uppercase tracking-wide">Exposures</div>
+        <div class="text-3xl font-extrabold text-white">{{ stats.exposures }}</div>
+        <div class="text-xs text-slate-500">
+            {{ stats.exposures_by_severity.critical|default:0 }} critical ·
+            {{ stats.exposures_by_severity.high|default:0 }} high
+        </div>
+    </div>
+    <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800">
+        <div class="text-slate-400 text-xs uppercase tracking-wide">Campaigns</div>
+        <div class="text-3xl font-extrabold text-white">{{ stats.campaigns }}</div>
+        <div class="text-xs text-slate-500">{{ stats.campaigns_by_status.verified|default:0 }} verified</div>
+    </div>
+    <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800">
+        <div class="text-slate-400 text-xs uppercase tracking-wide">Agent jobs</div>
+        <div class="text-3xl font-extrabold text-white">{{ stats.agent_jobs }}</div>
+        <div class="text-xs text-slate-500">{{ stats.queued_jobs }} queued</div>
+    </div>
+    <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800">
+        <div class="text-slate-400 text-xs uppercase tracking-wide">Notifications</div>
+        <div class="text-3xl font-extrabold text-white">{{ stats.notifications }}</div>
+    </div>
+    <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800">
+        <div class="text-slate-400 text-xs uppercase tracking-wide">Brokers</div>
+        <div class="text-3xl font-extrabold text-white">{{ stats.brokers }}</div>
+    </div>
+</div>
+
+<h2 class="text-xl font-bold text-white mb-3">Recent audit events</h2>
+<div class="rounded-xl bg-slate-900/60 border border-slate-800 divide-y divide-slate-800">
+    {% for event in recent_events %}
+    <div class="px-4 py-3 flex items-center justify-between text-sm">
+        <div>
+            <span class="font-semibold text-slate-200">{{ event.action }}</span>
+            {% if event.user %}<span class="text-slate-500"> · {{ event.user.username }}</span>{% endif %}
+        </div>
+        <div class="text-slate-500 text-xs">{{ event.created_at|date:"Y-m-d H:i" }} · {{ event.ip|default:"-" }}</div>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-center text-slate-500">No audit events yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,6 +1,5 @@
-from django.core.mail import EmailMessage
 from django.conf import settings
-
+from django.core.mail import EmailMessage
 
 STANDARD_TEMPLATE = """Dear {company} Data Privacy Team,
 
@@ -81,10 +80,9 @@ class EmailDeletionEngine:
         if stop_marketing:
             stops.append("use my information for marketing purposes")
 
-        stop_text = f"I request that you immediately STOP ALL of the following activities involving my personal data:\n"
+        stop_text = "I request that you immediately STOP ALL of the following activities involving my personal data:\n"
         for s in stops:
             stop_text += f"  - {s}\n"
-
         template = f"""Dear {{company}} Privacy Team,
 
 I am writing to formally exercise my right to opt out of the sale, sharing, and use of my personal information.

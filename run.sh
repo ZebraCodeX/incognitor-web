@@ -27,11 +27,14 @@ case "$CMD" in
   beat)
     .venv/bin/celery -A incognitor beat -l info
     ;;
+  sentinel)
+    .venv/bin/python manage.py sentinel_tick
+    ;;
   test)
     .venv/bin/python manage.py test tests
     ;;
   *)
-    echo "Usage: $0 {setup|web|worker|beat|test}"
+    echo "Usage: $0 {setup|web|worker|beat|sentinel|test}"
     exit 1
     ;;
 esac

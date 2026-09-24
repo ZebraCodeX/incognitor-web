@@ -1,0 +1,38 @@
+{% extends 'core/console/base_console.html' %}
+{% block console_content %}
+<div class="mb-4 flex gap-2 text-xs">
+    <a href="{% url 'console_exposures' %}" class="px-3 py-1 rounded-lg bg-slate-800 border border-slate-700">All</a>
+    <a href="?severity=critical" class="px-3 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300">critical</a>
+    <a href="?severity=high" class="px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">high</a>
+    <a href="?severity=medium" class="px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-300">medium</a>
+</div>
+<div class="rounded-xl bg-slate-900/60 border border-slate-800 overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-slate-400 border-b border-slate-800">
+                <th class="px-4 py-3">User</th>
+                <th class="px-4 py-3">Severity</th>
+                <th class="px-4 py-3">Kind</th>
+                <th class="px-4 py-3">Title</th>
+                <th class="px-4 py-3">Source</th>
+                <th class="px-4 py-3">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in exposures %}
+            <tr class="border-b border-slate-800/60">
+                <td class="px-4 py-3 text-slate-300">{{ e.user.username }}</td>
+                <td class="px-4 py-3 font-semibold
+                    {% if e.severity == 'critical' %}text-red-400{% elif e.severity == 'high' %}text-amber-400{% else %}text-slate-300{% endif %}">{{ e.severity }}</td>
+                <td class="px-4 py-3 text-slate-400">{{ e.kind }}</td>
+                <td class="px-4 py-3 text-slate-200">{{ e.title|truncatechars:60 }}</td>
+                <td class="px-4 py-3 text-slate-400">{{ e.source }}</td>
+                <td class="px-4 py-3 text-slate-400">{{ e.status }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No exposures.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

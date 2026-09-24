@@ -1,0 +1,18 @@
+# Bandit configuration for Incognitor.
+# https://bandit.readthedocs.io/en/latest/config.html
+exclude_dirs:
+  - .venv
+  - migrations
+  - tests
+  - staticfiles
+
+# B105/B106 hardcoded passwords: settings defaults such as
+# DEFAULT_FROM_EMAIL are intentional, not credentials.
+# B310 urllib: the agent uses requests, not urllib.
+skips:
+  - B105
+  - B106
+  - B110
+  - B112
+
+tests: []

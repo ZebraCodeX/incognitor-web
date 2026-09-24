@@ -1,4 +1,5 @@
 import os
+
 from celery import Celery
 from celery.schedules import crontab
 
@@ -12,5 +13,9 @@ app.conf.beat_schedule = {
     "run-due-recurring-scans": {
         "task": "core.tasks.run_recurring_scans",
         "schedule": crontab(hour=6, minute=0),  # daily at 6:00
+    },
+    "run-sentinel-tick": {
+        "task": "core.tasks.sentinel_tick",
+        "schedule": crontab(minute="*/30"),  # every 30 minutes
     },
 }

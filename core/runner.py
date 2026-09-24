@@ -38,9 +38,14 @@ def _due_recurring_scan(scan, now):
 
 
 def run_scheduler(interval_seconds=600):
-    """Periodically launch due recurring scans. Runs each scan in a thread so the
-    web machine needs no background worker/broker."""
+    """Periodically launch due recurring scans and Sentinel maintenance.
+
+    Runs each scan in a thread so the web machine needs no background
+    worker/broker.
+    """
     logger.info("recurring-scan scheduler started")
+    from core.tasks import process_user_campaigns, queue_due_watchlist_jobs
+
     while True:
         try:
             now = timezone.now()
@@ -63,6 +68,10 @@ def run_scheduler(interval_seconds=600):
                     + timezone.timedelta(days=source.recurring_interval_days),
                 )
                 start_scan_in_thread(new_scan)
+
+            # Sentinel heartbeat: queue monitor jobs, verify and escalate.
+            queue_due_watchlist_jobs(now)
+            process_user_campaigns()
         except Exception:
             logger.exception("scheduler tick failed")
         time.sleep(interval_seconds)

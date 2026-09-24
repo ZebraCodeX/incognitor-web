@@ -1,0 +1,38 @@
+{% extends 'core/console/base_console.html' %}
+{% block console_content %}
+<div class="mb-4 flex gap-2 text-xs">
+    <a href="{% url 'console_campaigns' %}" class="px-3 py-1 rounded-lg bg-slate-800 border border-slate-700">All</a>
+    <a href="?status=queued" class="px-3 py-1 rounded-lg bg-slate-800 border border-slate-700">queued</a>
+    <a href="?status=submitted" class="px-3 py-1 rounded-lg bg-slate-800 border border-slate-700">submitted</a>
+    <a href="?status=escalated" class="px-3 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300">escalated</a>
+    <a href="?status=verified" class="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">verified</a>
+</div>
+<div class="rounded-xl bg-slate-900/60 border border-slate-800 overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-slate-400 border-b border-slate-800">
+                <th class="px-4 py-3">User</th>
+                <th class="px-4 py-3">Broker</th>
+                <th class="px-4 py-3">Channel</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3">Deadline</th>
+                <th class="px-4 py-3">Confirmation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in campaigns %}
+            <tr class="border-b border-slate-800/60">
+                <td class="px-4 py-3 text-slate-300">{{ c.user.username }}</td>
+                <td class="px-4 py-3 text-slate-200">{{ c.broker.name|default:"—" }}</td>
+                <td class="px-4 py-3 text-slate-400">{{ c.channel }}</td>
+                <td class="px-4 py-3 text-slate-300">{{ c.status }}</td>
+                <td class="px-4 py-3 text-slate-400">{{ c.deadline_at|date:"Y-m-d"|default:"—" }}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs">{{ c.confirmation_code|truncatechars:40 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No campaigns.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,17 +1,24 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, logout
-from django.contrib import messages
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.utils import timezone
-from django.db.models import Count, Q
-import json
 
-from .models import Broker, Scan, RemovalRequest, DataStopRequest, UserProfile, ActivityLog, BrokerCategory
-from .forms import SignUpForm, UserProfileForm, ScanForm, DataStopForm
-from .services.scan_engine import ScanEngine
+from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+
+from .audit import record as audit_record
+from .forms import DataStopForm, ScanForm, SignUpForm, UserProfileForm
+from .models import (
+    Broker,
+    BrokerCategory,
+    DataStopRequest,
+    RemovalRequest,
+    UserProfile,
+)
 from .models import Scan as ScanModel
+from .services.scan_engine import ScanEngine
 
 
 def index(request):
@@ -34,6 +41,7 @@ def signup(request):
             )
             login(request, user)
             messages.success(request, "Welcome to Incognitor!")
+            audit_record("auth.signup.web", user=user, request=request)
             return redirect("dashboard")
     else:
         form = SignUpForm()
@@ -134,9 +142,10 @@ def start_scan(request, scan_id):
         scan.celery_task_id = result.id
         scan.save()
         return JsonResponse({"status": "started", "celery_task_id": result.id})
-    except (ImportError, Exception) as e:
+    except (ImportError, Exception):
         # Fall back to background thread
         import threading
+
         from .services.scan_engine import ScanEngine
 
         def _run():
@@ -233,6 +242,18 @@ def brokers_list(request):
     })
 
 
+def service_worker(request):
+    """Serve the Web Push service worker from the site root (controls origin)."""
+    from django.http import HttpResponse
+
+    from .services.push import SERVICE_WORKER_JS
+
+    response = HttpResponse(SERVICE_WORKER_JS, content_type="application/javascript")
+    response["Service-Worker-Allowed"] = "/"
+    response["Cache-Control"] = "no-cache"
+    return response
+
+
 @login_required
 def profile_view(request):
     profile = getattr(request.user, "profile", None)
@@ -250,3 +271,48 @@ def profile_view(request):
     else:
         profile_form = UserProfileForm(instance=profile)
     return render(request, "core/profile.html", {"form": profile_form})
+
+
+@login_required
+def exposures_list(request):
+    """Dashboard for the Sentinel exposure feed."""
+    exposures = request.user.exposures.select_related("breach_event").all()[:200]
+    unread = request.user.notifications.filter(is_read=False).count()
+    counts = {
+        "critical": request.user.exposures.filter(severity="critical").count(),
+        "high": request.user.exposures.filter(severity="high").count(),
+        "total": request.user.exposures.count(),
+    }
+    return render(request, "core/exposures.html", {
+        "exposures": exposures,
+        "unread": unread,
+        "counts": counts,
+    })
+
+
+@login_required
+def verify_email_page(request):
+    """Confirm an email-verification token and show the result."""
+    import hashlib
+    import hmac
+
+
+    token = request.GET.get("token", "")
+    verification = getattr(request.user, "email_verification", None)
+    verified = False
+    error = ""
+    if token and verification and verification.token_hash:
+        digest = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        if hmac.compare_digest(verification.token_hash, digest):
+            verification.is_verified = True
+            verification.verified_at = timezone.now()
+            verification.token_hash = ""
+            verification.save(update_fields=["is_verified", "verified_at", "token_hash"])
+            verified = True
+        else:
+            error = "Invalid or expired verification token."
+    elif verification and verification.is_verified:
+        verified = True
+    else:
+        error = "No verification token supplied."
+    return render(request, "core/verify_email.html", {"verified": verified, "error": error})

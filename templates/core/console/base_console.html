@@ -1,0 +1,16 @@
+{% extends 'core/base.html' %}
+{% block title %}Operator Console - Incognitor{% endblock %}
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <h1 class="text-3xl font-extrabold text-white">Operator Console</h1>
+    <span class="px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold">STAFF</span>
+</div>
+<div class="mb-6 flex flex-wrap gap-2 text-sm">
+    <a href="{% url 'console_overview' %}" class="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:border-indigo-500 text-slate-200">Overview</a>
+    <a href="{% url 'console_users' %}" class="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:border-indigo-500 text-slate-200">Users</a>
+    <a href="{% url 'console_exposures' %}" class="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:border-indigo-500 text-slate-200">Exposures</a>
+    <a href="{% url 'console_campaigns' %}" class="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:border-indigo-500 text-slate-200">Campaigns</a>
+    <a href="{% url 'console_brokers' %}" class="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:border-indigo-500 text-slate-200">Brokers</a>
+</div>
+{% block console_content %}{% endblock %}
+{% endblock %}

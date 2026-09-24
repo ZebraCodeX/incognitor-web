@@ -1,6 +1,7 @@
-from django.test import TestCase
 from django.contrib.auth.models import User
-from core.models import Broker, Scan, RemovalRequest, DataStopRequest, UserProfile
+from django.test import TestCase
+
+from core.models import Broker, DataStopRequest, RemovalRequest, Scan, UserProfile
 
 
 class BrokerModelTests(TestCase):

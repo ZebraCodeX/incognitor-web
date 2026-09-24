@@ -534,17 +534,9 @@ BROKERS = [
 class Command(BaseCommand):
     help = "Seed the data broker registry with known brokers."
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--force",
-            action="store_true",
-            help="Update existing brokers with new data",
-        )
-
     def handle(self, *args, **options):
         from core.models import Broker
 
-        force = options.get("force", False)
         created = 0
         updated = 0
 
